@@ -1,0 +1,68 @@
+{% load static %} 
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Patient Detail - Mercy Ojiingwaeru</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/admindashboard/css/patientDetail.css">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+     <a href="/admindashboard/viewAppointments/" class="btn btn-outline-secondary mb-4">&larr; Back to list</a>
+    <h3 class="fw-bold mb-4">Patient Detail View</h3>
+
+    <div class="row g-3">
+      <!-- Left: patient card and history -->
+      <div class="col-lg-8">
+        <div class="card p-4 mb-3">
+          <h1 class="h3 fw-bold mb-0">Mercy Ojiingwaeru</h1>
+          <div class="text-muted mb-3">Patient ID: 7486J</div>
+
+          <div class="mb-3">
+            <div><i class="bi bi-telephone me-2"></i>0728373873</div>
+            <div class="mt-2"><i class="bi bi-envelope me-2"></i>mercy@gmail.com</div>
+          </div>
+        </div>
+
+        <div class="card mb-2">
+          <div class="card-body">
+            <h5 class="card-title">History</h5>
+            <ul class="list-unstyled mb-0">
+              {% for h in history %}
+              <li class="py-3 border-bottom d-flex justify-content-between">
+                <span>{{ h.date|date:"j F Y" }}</span>
+                {% if h.status == "missed" %}
+                  <span class="text-danger fw-semibold">Missed</span>
+                {% else %}
+                  <span class="text-success fw-semibold">{{ h.status|capfirst }}</span>
+                {% endif %}
+              </li>
+              {% empty %}
+              <li>No previous appointments</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: score and intervention -->
+      <div class="col-lg-4">
+        <div class="card p-3 mb-3 text-center">
+          <div class="text-muted">Model Prediction Score</div>
+          <div class="display-5 fw-bold my-3">{{ predicted_score }}</div>
+        </div>
+
+        <div class="card p-3 text-center">
+          <div class="text-muted">Recommended Intervention</div>
+          <div class="h4 fw-bold my-3">{{ recommended_intervention }}</div>
+          <button class="btn btn-primary w-100">Send Intervention</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

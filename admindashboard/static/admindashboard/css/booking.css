@@ -1,0 +1,10 @@
+.booking-card {
+  max-width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  padding: 1.5rem;
+  background-color: #fff;
+}
+body {
+  font-family: Arial, sans-serif;
+}

@@ -1,0 +1,43 @@
+ body {
+      background-color: #f8faff;
+      color: #0a0f2c;
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .btn-export {
+      background-color: #0a0f2c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+    }
+    .btn-export:hover {
+      background-color: #1b2655;
+    }
+    .table thead {
+      background-color: #f4f7fb;
+    }
+    .status-attended {
+      color: #0a0f2c;
+      font-weight: 600;
+    }
+    .status-missed {
+      color: #e53935;
+      font-weight: 600;
+    }
+    .status-low {
+      color: #43a047;
+      font-weight: 600;
+    }
+    @media (max-width: 767px) {
+      .filters {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .btn-export {
+        width: 100%;
+      }
+    }
+    
