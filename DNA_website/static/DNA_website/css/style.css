@@ -1,0 +1,117 @@
+html {
+  scroll-behavior: smooth;
+}
+body {
+  background-color: #f8fafc;
+  color: #333;
+}
+
+.hero {
+  min-height: 80vh;
+  background: linear-gradient(90deg, #f0f7ff 0%, #ffffff 100%);
+}
+
+.hero h1,.nav-btn {
+  color: #004080;
+}
+
+.hero-img {
+  max-width: 400px;
+}
+
+ .navbar-brand {
+  font-size: 1.5rem;
+  color: #004080 !important; 
+} 
+.nav-btn:hover{
+    color: white;
+}
+/* General spacing */
+section {
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+/* ABOUT SECTION */
+.about-section img {
+  border-radius: 12px;
+  max-height: 380px;
+  object-fit: cover;
+}
+
+.about-section h2 {
+  font-size: 2rem;
+  color: #002d72;   /* Strong healthcare/NHS blue tone */
+}
+
+.about-section p {
+  line-height: 1.6;
+}
+
+/* CONTACT SECTION */
+.contact-section form {
+  border-radius: 12px;
+}
+
+.contact-section h2 {
+  color: #002d72;
+}
+
+.contact-section button {
+  background-color: #002d72;
+  border: none;
+}
+
+.contact-section button:hover {
+  background-color: #0143aa;
+}
+
+/* HOW IT WORKS */
+.how-it-works {
+  background: #ffffff;
+}
+
+.how-it-works h2 {
+  color: #002d72;
+  margin-bottom: 40px;
+}
+
+.how-step {
+  text-align: center;
+  padding: 20px;
+}
+
+.how-step .icon-box {
+  width: 70px;
+  height: 70px;
+  background-color: #cbe2ff;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: #002d72;
+}
+
+.how-step h5 {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.how-step p {
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+/* RESPONSIVE TWEAKS */
+@media (max-width: 768px) {
+  .about-section img {
+    max-height: 260px;
+  }
+
+  .how-step {
+    margin-bottom: 20px;
+  }
+}
+
