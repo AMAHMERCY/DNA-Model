@@ -9,10 +9,6 @@ def view_appointments(request):
 def view_patientDetails(request):
     return render(request, 'admindashboard/patientDetails.html')
 
-
-def login_view(request):
-    return render(request, 'admindashboard/login.html')
-
 def booking_view(request):
     return render(request, 'admindashboard/booking.html')
 
