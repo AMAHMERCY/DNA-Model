@@ -13,6 +13,9 @@ def view_patientDetails(request):
 def login_view(request):
     return render(request, 'admindashboard/login.html')
 
+def register_view(request):
+    return render(request, 'admindashboard/register.html')
+
 def booking_view(request):
     return render(request, 'admindashboard/booking.html')
 
