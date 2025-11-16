@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | DNA System</title>
-    <link rel="stylesheet" href="/static/admindashboard/css/login.css">
+    <link rel="stylesheet" href="/static/DNA_website/css/login.css">
 </head>
 <body>
 
@@ -26,9 +26,13 @@
 
       <button type="submit">Login</button>
     </form>
-
+ <div style="padding-top: 16px;">
+                <span>Don't have an account?</span> 
+                <a style="color: blue;" href="{% url 'register' %}" class="fw-bold text-decoration-underline">Register</a>
+            </div>
     <div class="footer">
       <a href="#">Forgot password?</a>
+      
     </div>
   </div>
 
