@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'accounts',
     'patients',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'appointments'
 
 ]
 REST_FRAMEWORK = {
