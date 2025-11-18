@@ -56,11 +56,12 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         if (response.ok) {
             // store access token for future authenticated requests
             localStorage.setItem("access_token", data.access);
+            localStorage.setItem("refresh", data.refresh);
 console.log("Hello Ogechi")
             document.getElementById("message").innerText = "Login successful!";
             
             // redirect to dashboard
-            window.location.href = "/dashboard/";
+            window.location.href = "/userdashboard/";
         } else {
             document.getElementById("message").innerText = data.detail || "Invalid login";
         }

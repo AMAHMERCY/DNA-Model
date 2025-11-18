@@ -57,3 +57,11 @@ def book_appointment(request):
         },
         status=status.HTTP_201_CREATED,
     )
+    
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_my_appointments(request):
+    user = request.user
+    appointments = Appointment.objects.filter(patient=user)
+    serializer = AppointmentDetailSerializer(appointments, many=True)
+    return Response(serializer.data, status=200)
