@@ -167,6 +167,17 @@ document.getElementById("logoutBtn")?.addEventListener("click", function (e) {
     window.location.href = "/login/";
 });
 
+document.getElementById("logoutBtn").addEventListener("click", function () {
+    // Remove all authentication data
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("role");
+
+    // Redirect to login page
+    window.location.href = "/login/";
+});
+
+
 
 </script>
 </body>

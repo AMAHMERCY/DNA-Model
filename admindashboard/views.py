@@ -12,4 +12,5 @@ def view_patientDetails(request):
 def booking_view(request):
     return render(request, 'admindashboard/booking.html')
 
-
+def manageSlots_view(request):
+    return render(request, 'admindashboard/manageSlots.html')
