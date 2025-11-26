@@ -81,7 +81,8 @@
                 <thead class="fw-semibold">
                   <tr>
                     <th>#</th>
-<th>Patient</th>
+<th>Patient Name</th>
+<th>Hospital ID</th>
 <th>Date</th>
 <th>Time</th>
 <th>Reason</th>
@@ -89,49 +90,10 @@
 <th>Risk</th>
 <th>Intervention</th>
 
-                    <!-- <th>S/N</th>
-                      <th>Patient Email</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Predicted Risk</th>
-                    <th>Suggested Intervention Strategy</th>
-                    <th>Action</th> -->
+                    
                   </tr>
                 </thead>
-                <!-- <tbody>
-                  <tr>
-                    <td>Sarah Miller</td>
-                    <td>15 April 2024</td>
-                    <td>10:00 am</td>
-                    <td><span class="status-attended">✔ Attended</span></td>
-                    <td>Routine Monitoring</td>
-                    <td><a href="/admindashboard/patientDetails/" class="btn btn-primary">View Patient Details</a></td>
-                  </tr>
-                  <tr>
-                    <td>Emily Chang</td>
-                    <td>17 April 2024</td>
-                    <td>1:00 pm</td>
-                    <td><span class="status-missed">❗ Missed</span></td>
-                    <td>Follow-Up Call</td>
-                    <td><a href="/admindashboard/patientDetails/" class="btn btn-primary">View Patient Details</a></td>
-                  </tr>
-                  <tr>
-                    <td>John Smith</td>
-                    <td>18 April 2024</td>
-                    <td>2:00 pm</td>
-                    <td><span class="status-low">✔ Low Risk</span></td>
-                    <td>Routine Monitoring</td>
-                    <td><a href="/admindashboard/patientDetails/" class="btn btn-primary">View Patient Details</a></td>
-                  </tr>
-                  <tr>
-                    <td>Sophia Davis</td>
-                    <td>19 April 2024</td>
-                    <td>10:30 am</td>
-                    <td><span class="status-missed">❗ Missed</span></td>
-                    <td>Urgent GP Visit</td>
-                    <td><a href="/admindashboard/patientDetails/" class="btn btn-primary">View Patient Details</a></td>
-                  </tr>
-                </tbody> -->
+             
                 <tbody id="appointmentTable"></tbody>   
               </table>
             </div>
@@ -163,14 +125,16 @@ data.forEach((app, index) => {
   table.innerHTML += `
     <tr>
       <td>${index + 1}</td>
-      <td>${app.patient_email}</td>
+     <td>${app.patient_name}</td>
+       <td>${app.patient_hospital_id}</td>
       <td>${app.appointment_date}</td>
-      <td>${app.slot ? app.slot.start_time : "—"}</td>
+    <td>${app.slot_time}</td>
       <td>${app.reason}</td>
       <td>${app.symptoms.join(", ")}</td>
-      <td class="fw-bold text-${app.risk_level}">
-        ${app.risk_level.toUpperCase()}
-      </td>
+      <td class="text-risk-${app.risk_level}">
+    ${app.risk_level.toUpperCase()}
+</td>
+
       <td>${app.recommended_intervention}</td>
     </tr>`;
 });
