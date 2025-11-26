@@ -47,6 +47,9 @@
       font-weight: 600;
       border-radius: 10px;
     }
+    .risk-high { color: #dc2626; }
+    .risk-medium { color: #d97706; }
+    .risk-low { color: #16a34a; }
     .btn-custom {
       border-radius: 8px;
       font-weight: 500;
@@ -64,17 +67,4 @@
         margin-left: 0;
       }
     }
-    .text-risk-low {
-  color: #28a745 !important;   /* green */
-  font-weight: 700;
-}
-
-.text-risk-medium {
-  color: #fd7e14 !important;   /* orange */
-  font-weight: 700;
-}
-
-.text-risk-high {
-  color: #dc3545 !important;   /* red */
-  font-weight: 700;
-}
+    
