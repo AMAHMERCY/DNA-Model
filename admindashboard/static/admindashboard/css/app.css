@@ -40,4 +40,17 @@
         width: 100%;
       }
     }
-    
+     .text-color-risk-low {
+  color: #28a745 !important;   /* green */
+  font-weight: 700;
+}
+
+.text-color-risk-medium {
+  color: #fd7e14 !important;   /* orange */
+  font-weight: 700;
+}
+
+.text-color-risk-high {
+  color: #dc3545 !important;   
+  font-weight: 700;
+}
