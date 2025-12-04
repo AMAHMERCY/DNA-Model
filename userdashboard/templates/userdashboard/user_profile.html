@@ -56,7 +56,7 @@
 
 <body>
 
-  <!-- Sidebar -->
+ 
   <div class="sidebar">
     <h4 class="text-center fw-bold mb-4">DNA Healthcare</h4>
 
@@ -69,14 +69,14 @@
     </nav>
   </div>
 
-  <!-- Top Navbar -->
+  
   <nav class="navbar navbar-expand-lg px-4">
     <div class="container-fluid">
       <span class="navbar-brand fw-bold">My Profile</span>
     </div>
   </nav>
 
-  <!-- Content -->
+
   <div class="content-area">
     <div class="container">
 
@@ -103,13 +103,13 @@
           <div class="col" id="email"></div>
         </div>
 
-        <!-- NEW: DOB -->
+        
         <div class="row mb-2">
           <div class="col-5 fw-semibold">Date of Birth:</div>
           <div class="col" id="date_of_birth"></div>
         </div>
 
-        <!-- NEW: AGE -->
+      
         <div class="row mb-2">
           <div class="col-5 fw-semibold">Age:</div>
           <div class="col" id="age"></div>
@@ -150,7 +150,6 @@
   </div>
 
 
-  <!-- EDIT PROFILE MODAL -->
   <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
@@ -215,17 +214,17 @@
       document.getElementById("profile_name").innerText = data.name;
       document.getElementById("profile_email").innerText = data.email;
 
-      // Display DOB
+      
       document.getElementById("date_of_birth").innerText = data.date_of_birth;
 
-      // Calculate age
+      
       const dob = new Date(data.date_of_birth);
       const diff = Date.now() - dob.getTime();
       const ageDt = new Date(diff);
       const age = Math.abs(ageDt.getUTCFullYear() - 1970);
       document.getElementById("age").innerText = age + " years";
 
-      // Avatar
+      
       document.getElementById("avatar").src =
         "https://ui-avatars.com/api/?name=" +
         encodeURIComponent(data.name) +

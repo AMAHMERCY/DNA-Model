@@ -9,7 +9,7 @@ def seed_initial_admin(apps, schema_editor):
         User.objects.create(
             name="Super Admin",
             email="admin@dnahealth.com",
-            password=make_password("Admin12345!"),  # CHANGE AFTER FIRST LOGIN
+            password=make_password("Admin12345!"),  
             role="admin"
         )
 
