@@ -1,7 +1,7 @@
 cd your_project_folder
 
 For windows use the following
-python -m venv venv
+python -m venv env
 source env/Scripts/activate
 
 For MAC OS use and linux user use the following

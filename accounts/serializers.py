@@ -4,18 +4,28 @@ from django.contrib.auth import authenticate
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'name', 'password']
+        fields = [
+            "email",
+            "name",
+            "password",
+            "date_of_birth",
+            "phone",
+            "rurality",
+            "sex",
+            "chronic_condition",
+            "chronic_other",
+        ]
 
     def create(self, validated_data):
-        return User.objects.create_user(
-            email=validated_data['email'],
-            name=validated_data['name'],
-            password=validated_data['password']
-        )
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -40,8 +50,20 @@ class LoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["email", "name", "hospital_id", "slug", "role", "date_joined"]
-
+        fields = [
+            "email",
+            "name",
+            "hospital_id",
+            "slug",
+            "role",
+            "date_joined",
+            "date_of_birth",
+            "phone",
+            "rurality",
+            "sex",
+            "chronic_condition",
+            "chronic_other",
+        ]
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:

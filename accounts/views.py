@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 @api_view(['POST'])
 def register_patient(request):
     serializer = RegisterSerializer(data=request.data)
+
     if serializer.is_valid():
         user = serializer.save()
         return Response({
@@ -18,7 +19,13 @@ def register_patient(request):
                 "name": user.name,
                 "slug": user.slug,
                 "hospital_id": user.hospital_id,
-                "role": user.role
+                "role": user.role,
+                "date_of_birth": user.date_of_birth,
+                "phone": user.phone,
+                "rurality": user.rurality,
+                "sex": user.sex,
+                "chronic_condition": user.chronic_condition,
+                "chronic_other": user.chronic_other,
             }
         }, status=status.HTTP_201_CREATED)
 
