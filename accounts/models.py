@@ -10,7 +10,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255)
 
-    # New fields
+    
     date_of_birth = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     rurality = models.CharField(max_length=20, null=True, blank=True)
@@ -35,12 +35,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
 
-        # Generate slug if missing
+        
         if not self.slug:
             unique_code = uuid.uuid4().hex[:6]
             self.slug = slugify(f"{self.name}-{unique_code}")
 
-        # Auto-increment hospital_id
+        
         if not self.hospital_id:
             last_user = User.objects.order_by("-id").first()
 
