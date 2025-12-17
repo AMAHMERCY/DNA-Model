@@ -174,6 +174,7 @@ def compute_age_band(dob, appt_date):
 #     df = df[MODEL_FEATURES]  # reorder exactly
 
 #     return df
+
 def build_feature_row(user, appointment):
     # if MODEL_FEATURES is None:
     #     return None
@@ -204,7 +205,9 @@ def build_feature_row(user, appointment):
     row["appointment_day_of_month"] = appt_dt.day
     row["appointment_month"] = appt_dt.month
     row["appointment_weekofyear"] = appt_dt.isocalendar().week
-    row["appointment_day_name"] = appt_dt.strftime("%A")
+    # row["appointment_day_name"] = appt_dt.strftime("%A")
+    row["appointment_day_of_week_name"] = appt_dt.strftime("%A")
+
 
     # lead time
     if appointment.created_at:
@@ -288,6 +291,7 @@ def build_feature_row(user, appointment):
             df[col] = df[col].astype(str)
 
     print("🔍 FINAL FEATURE ROW:", df.to_dict(orient="records")[0])
+    print("DEBUG postcode used for IMD:", postcode)
     return df
 
 
