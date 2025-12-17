@@ -67,13 +67,9 @@
             <!-- STEP 2 -->
             <div id="step2" class="form-section">
 
-                <div class="mb-3">
-                    <label class="form-label">Rurality</label>
-                    <select class="form-select" name="rurality" required>
-                        <option value="urban">Urban</option>
-                        <option value="suburban">Suburban</option>
-                        <option value="rural">Rural</option>
-                    </select>
+                 <div class="mb-3">
+                    <label class="form-label">Post Code</label>
+                    <input type="text" class="form-control" name="post_code" required>
                 </div>
 
                 <div class="mb-3">
@@ -146,7 +142,7 @@ document.getElementById("registerForm").addEventListener("submit", async functio
         password: document.querySelector("input[name='password']").value,
         date_of_birth: document.querySelector("input[name='date_of_birth']").value,
         phone: document.querySelector("input[name='phone']").value,
-        rurality: document.querySelector("select[name='rurality']").value,
+        post_code: document.querySelector("input[name='post_code']").value,
         sex: document.querySelector("select[name='sex']").value,
         chronic_condition: document.querySelector("select[name='chronic_condition']").value,
         chronic_other: document.querySelector("input[name='chronic_other']").value,
@@ -160,12 +156,12 @@ document.getElementById("registerForm").addEventListener("submit", async functio
         });
 
         const data = await response.json();
-
+console.log(data)
         if (response.ok) {
             document.getElementById("message").classList.remove("text-danger");
             document.getElementById("message").classList.add("text-success");
             document.getElementById("message").innerText = "Registration successful!";
-            window.location.href = "/login/";
+           // window.location.href = "/login/";
         } else {
             document.getElementById("message").innerText = JSON.stringify(data);
         }

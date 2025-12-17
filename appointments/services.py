@@ -1,342 +1,392 @@
-# # # appointments/services.py
-# # import random
-
-# # def fake_predict_risk_and_intervention(patient, appointment):
-# #     """
-# #     TEMPORARY placeholder.
-# #     Later you'll load your trained model and use real features.
-# #     """
-
-# #     # Example simple rule:
-# #     # - If patient has many past no-shows -> higher risk
-# #     # - For now we just randomise for testing
-
-# #     choices = ["low", "medium", "high"]
-# #     risk = random.choice(choices)
-
-# #     if risk == "low":
-# #         intervention = "sms"           # simple SMS
-# #     elif risk == "medium":
-# #         intervention = "sms_confirm"   # SMS that requires YES/NO reply
-# #     else:
-# #         intervention = "sms_call"      # SMS + automated call
-
-# #     return risk, intervention
-
-# # appointments/services.py
-
-# import os
-# from pathlib import Path
-# from datetime import datetime
-
-# import numpy as np
-# import pandas as pd
-# import joblib
-
-# # ==========================
-# # 1. Load model + feature list
-# # ==========================
-
-# BASE_DIR = Path(__file__).resolve().parent
-
-# MODEL_PATH = BASE_DIR / "ml" / "xgb_no_show_model_final.pkl"
-# FEATURES_PATH = BASE_DIR / "ml" / "model_features_final.pkl"
-
-# model = None
-# MODEL_FEATURES = None
-
-# try:
-#     model = joblib.load(MODEL_PATH)
-#     MODEL_FEATURES = joblib.load(FEATURES_PATH)
-#     print("✅ Loaded no-show model and features.")
-# except Exception as e:
-#     print("⚠️ Could not load ML model, falling back to random:", e)
-
-
-# # Your tuned F1 threshold for class 1 (no-show)
-# BEST_THRESHOLD = 0.50801337
-
-
-# # ==========================
-# # 2. Build feature vector from appointment + user
-# # ==========================
-
-# def build_feature_row(patient, appointment):
-#     """
-#     Build a single-row feature vector that matches MODEL_FEATURES.
-
-#     Important note:
-#     - The model was trained on a rich Kaggle dataset with many fields
-#       (Age, Scholarship, Neighbourhood dummies, etc).
-#     - Your current Django models don't have all those fields.
-#     - To keep the system running, we initialise all features to 0
-#       and fill only what we can (waiting_days, day-of-week, etc).
-#     - This is enough for demonstrating integration and end-to-end flow
-#       for your dissertation, but in production you would align your
-#       database schema with the training features.
-#     """
-
-#     if MODEL_FEATURES is None:
-#         # fallback: just return None and let caller handle it
-#         return None
-
-#     # Start with zeros for every feature
-#     data = {feature_name: 0 for feature_name in MODEL_FEATURES}
-
-#     # ----- Derive what we can from Appointment + User -----
-
-#     # waiting_days = days between scheduled and appointment
-#     # we'll approximate "ScheduledDay" as created_at (when booked in your system)
-#     if hasattr(appointment, "created_at") and appointment.created_at:
-#         scheduled_dt = appointment.created_at
-#     else:
-#         scheduled_dt = datetime.now()
-
-#     appointment_dt = datetime.combine(appointment.appointment_date, datetime.min.time())
-#     waiting_days = (appointment_dt - scheduled_dt).days
-#     waiting_days = max(waiting_days, 0)
-
-#     if "waiting_days" in data:
-#         data["waiting_days"] = waiting_days
-
-#     # Day of week (0=Mon, ..., 6=Sun)
-#     appt_day_of_week = appointment_dt.weekday()
-#     if "Appt_DayOfWeek" in data:
-#         data["Appt_DayOfWeek"] = appt_day_of_week
-
-#     # Weekend flag
-#     is_weekend = 1 if appt_day_of_week in [5, 6] else 0
-#     if "Appt_is_weekend" in data:
-#         data["Appt_is_weekend"] = is_weekend
-
-#     # Month
-#     if "Appt_Month" in data:
-#         data["Appt_Month"] = appointment_dt.month
-
-#     # Hour – your Appointment model doesn’t store time, only date.
-#     # If in future you add a real TimeField or slot relationship, use that.
-#     # For now we default to 9am to keep it consistent.
-#     default_hour = 9
-#     if "Appt_Hour" in data:
-#         data["Appt_Hour"] = default_hour
-
-#     # Age / AgeGroup – if you later store date_of_birth or age on the user,
-#     # you can compute it here. For now we leave them at 0.
-
-#     # Example if you later add patient.age to your User model:
-#     # if hasattr(patient, "age") and "Age" in data:
-#     #     data["Age"] = patient.age
-
-#     # Convert to DataFrame with 1 row and columns in correct order
-#     row_df = pd.DataFrame([[data[col] for col in MODEL_FEATURES]], columns=MODEL_FEATURES)
-#     return row_df
-
-
-# # ==========================
-# # 3. Core predictor
-# # ==========================
-
-# def ml_predict_no_show_probability(patient, appointment):
-#     """
-#     Returns probability that this appointment is a no-show (class 1).
-#     """
-#     if model is None or MODEL_FEATURES is None:
-#         return None  # caller will fallback
-
-#     features_df = build_feature_row(patient, appointment)
-#     if features_df is None:
-#         return None
-
-#     # Predict probability for class 1 (no-show)
-#     proba = model.predict_proba(features_df)[0, 1]
-#     return float(proba)
-
-
-# # ==========================
-# # 4. Public function used by your views
-# # ==========================
-
-# import random
-
-
-# def predict_risk_and_intervention(patient, appointment):
-#     """
-#     Main function your views should call.
-
-#     1) Tries to use the trained XGBoost model.
-#     2) If model is unavailable, falls back to random (so nothing breaks).
-#     3) Maps probability → risk band → intervention type.
-#     """
-
-#     p_no_show = ml_predict_no_show_probability(patient, appointment)
-
-#     if p_no_show is None:
-#         # Fallback to the old fake logic if the model can't be used
-#         print("⚠️ Using random fallback for risk prediction.")
-#         choices = ["low", "medium", "high"]
-#         risk = random.choice(choices)
-
-#     else:
-#         # Threshold for class 1 is ~0.508 (F1-optimised)
-#         # We can define bands around that to get low/medium/high.
-#         if p_no_show < 0.3:
-#             risk = "low"
-#         elif p_no_show < 0.7:
-#             risk = "medium"
-#         else:
-#             risk = "high"
-
-#         print(f"Predicted no-show probability={p_no_show:.3f}, risk={risk}")
-
-#     # Map risk → intervention policy
-#     if risk == "low":
-#         intervention = "sms"           # simple SMS
-#     elif risk == "medium":
-#         intervention = "sms_confirm"   # SMS that requires confirmation
-#     else:
-#         intervention = "sms_call"      # SMS + call
-
-#     return risk, intervention
-
-
-# appointments/services.py
-
-import os
-from pathlib import Path
-from datetime import datetime
-
-import numpy as np
-import pandas as pd
 import joblib
+import pandas as pd
+from datetime import datetime, date
+from pathlib import Path
+from django.utils import timezone
+from accounts.imd_lookup import lookup_imd
+from .models import Appointment, AppointmentSlot
+from twilio.rest import Client
+import os
+from django.conf import settings
 
-# ====================================
+TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM = os.getenv("TWILIO_PHONE_NUMBER")
+
+twilio_client = None
+if TWILIO_SID and TWILIO_TOKEN:
+    twilio_client = Client(TWILIO_SID, TWILIO_TOKEN)
+
+
+
+# ============================================================
 # 1. Load CatBoost model + metadata
-# ====================================
+# ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent / "ml"
 
 MODEL_PATH = BASE_DIR / "catboost_no_show_model.pkl"
 FEATURES_PATH = BASE_DIR / "catboost_feature_list.pkl"
-CATEGORICAL_PATH = BASE_DIR / "catboost_categorical_columns.pkl"
+CATCOLS_PATH = BASE_DIR / "catboost_categorical_columns.pkl"
 THRESHOLD_PATH = BASE_DIR / "catboost_best_threshold.pkl"
 
 model = None
 MODEL_FEATURES = None
 CATEGORICAL_COLS = None
-BEST_THRESHOLD = 0.5   # fallback, replaced when file loads
+BEST_THRESHOLD = 0.50
 
 try:
     model = joblib.load(MODEL_PATH)
     MODEL_FEATURES = joblib.load(FEATURES_PATH)
-    CATEGORICAL_COLS = joblib.load(CATEGORICAL_PATH)
+    CATEGORICAL_COLS = joblib.load(CATCOLS_PATH)
     BEST_THRESHOLD = joblib.load(THRESHOLD_PATH)
-
     print("✅ CatBoost model + metadata loaded successfully")
-
 except Exception as e:
-    print("⚠️ Could not load CatBoost files:", e)
+    print("⚠️ Failed to load CatBoost ML files:", e)
 
 
 
-# ====================================
-# 2. Build the ML feature row
-# ====================================
+# ============================================================
+# 2. Age band calculator
+# ============================================================
 
-def build_feature_row(patient, appointment):
-    """
-    Convert appointment + user data into a single-row DataFrame
-    matching MODEL_FEATURES from the CatBoost training pipeline.
-    """
+def compute_age_band(dob, appt_date):
+    if not dob:
+        return "31-50"
 
+    years = appt_date.year - dob.year
+    if (appt_date.month, appt_date.day) < (dob.month, dob.day):
+        years -= 1
+
+    if years < 18:
+        return "0-17"
+    if years <= 30:
+        return "18-30"
+    if years <= 50:
+        return "31-50"
+    if years <= 70:
+        return "51-70"
+    return "70+"
+
+
+
+# ============================================================
+# 3. Build feature row for the ML model
+# ============================================================
+
+# def build_feature_row(user, appointment):
+#     if MODEL_FEATURES is None:
+#         return None
+
+#     row = {f: 0 for f in MODEL_FEATURES}
+
+#     # -------------------------
+#     # APPOINTMENT DATE FEATURES
+#     # -------------------------
+#     appt_date = appointment.appointment_date
+#     appt_dt = datetime.combine(appt_date, datetime.min.time())
+
+#     row["appointment_day_of_month"] = appt_dt.day
+#     row["appointment_month"] = appt_dt.month
+#     row["appointment_weekofyear"] = appt_dt.isocalendar().week
+#     row["appointment_day_name"] = appt_dt.strftime("%A")
+#     row["day_of_week"] = appt_dt.weekday()
+
+#     # lead_time_days
+#     if appointment.created_at:
+#         row["lead_time_days"] = max((appt_dt - appointment.created_at).days, 0)
+#     else:
+#         row["lead_time_days"] = 7
+
+#     # hour (from slot)
+#     try:
+#         slot = AppointmentSlot.objects.filter(id=appointment.slot_id).first()
+#         row["hour"] = slot.start_time.hour if slot else 9
+#     except:
+#         row["hour"] = 9
+
+#     # -------------------------
+#     # IMD FROM POSTCODE
+#     # -------------------------
+#     postcode = getattr(user, "post_code", "") or ""
+#     imd_score, imd_band = lookup_imd(postcode)
+
+#     row["postcode"] = postcode or "UNKNOWN"
+#     row["imd_score"] = imd_score
+#     row["imd_band"] = imd_band
+
+#     # -------------------------
+#     # PATIENT ATTRIBUTES
+#     # -------------------------
+#     row["sex"] = getattr(user, "sex", "other")
+#     row["chronic_condition"] = getattr(user, "chronic_condition", "none")
+
+#     # num_chronic_conditions
+#     cond = row["chronic_condition"].lower()
+#     row["num_chronic_conditions"] = 0 if cond in ["none", "no", ""] else 1
+#     row["has_chronic"] = 1 if row["num_chronic_conditions"] > 0 else 0
+
+#     # age_band
+#     dob = getattr(user, "date_of_birth", None)
+#     row["age_band"] = compute_age_band(dob, appt_date)
+
+#     # -----------------------------------
+#     # PAST APPOINTMENT BEHAVIOUR (THIN DB)
+#     # -----------------------------------
+#     past_qs = Appointment.objects.filter(patient=user, appointment_date__lt=appt_date)
+#     row["past_appointments"] = past_qs.count()
+#     row["past_no_shows"] = 0  # you don’t store historical labels
+#     row["attendance_rate"] = 1.0  # safe default
+#     row["last_attended_days_ago"] = 30
+
+#     # -----------------------------------
+#     # REQUIRED MODEL FEATURES (DEFAULTS)
+#     # -----------------------------------
+#     row["cancellations"] = 0
+#     row["late_arrivals"] = 0
+#     row["was_rescheduled"] = 0
+#     row["reschedule_count"] = 0
+#     row["distance_km"] = 5.0
+
+#     # reminders
+#     row["sms_read"] = 0
+#     row["email_sent"] = 0
+#     row["call_attempted"] = 0
+
+#     # context
+#     row["weather"] = "sunny"
+#     row["transport_disruption"] = 0
+#     row["local_holiday"] = 0
+
+#     # booking metadata
+#     row["booking_channel"] = "web"
+#     row["appointment_type"] = "checkup"
+
+#     # -----------------------------------
+#     # BUILD FINAL DATAFRAME
+#     # -----------------------------------
+#     df = pd.DataFrame([row])
+
+#     for col in CATEGORICAL_COLS:
+#         if col in df.columns:
+#             df[col] = df[col].astype(str)
+
+#     df = df[MODEL_FEATURES]  # reorder exactly
+
+#     return df
+
+def build_feature_row(user, appointment):
+    # if MODEL_FEATURES is None:
+    #     return None
+
+    # appt_date = appointment.appointment_date
+    # appt_dt = datetime.combine(appt_date, datetime.min.time())
     if MODEL_FEATURES is None:
         return None
 
-    # initialize dictionary for all features
-    row = {feature: 0 for feature in MODEL_FEATURES}
-
-    # -------------------------------
-    # Populate available features
-    # -------------------------------
-
     appt_date = appointment.appointment_date
-    appt_datetime = datetime.combine(appt_date, datetime.min.time())
 
-    # Lead time (days between booking and appointment)
+    # MAKE APPOINTMENT DATETIME AWARE
+    appt_dt = timezone.make_aware(
+        datetime.combine(appt_date, datetime.min.time())
+    )
+
+    # Start with a dict containing ALL model features initialized to safe defaults
+    row = {f: 0 for f in MODEL_FEATURES}
+
+    # -------------------------
+    # TIME FEATURES
+    # --------------------------
+    # hour from slot if possible
+    slot = AppointmentSlot.objects.filter(id=appointment.slot_id).first()
+    row["hour"] = slot.start_time.hour if slot else 9
+
+    row["day_of_week"] = appt_dt.weekday()
+    row["appointment_day_of_month"] = appt_dt.day
+    row["appointment_month"] = appt_dt.month
+    row["appointment_weekofyear"] = appt_dt.isocalendar().week
+    # row["appointment_day_name"] = appt_dt.strftime("%A")
+    row["appointment_day_of_week_name"] = appt_dt.strftime("%A")
+
+
+    # lead time
     if appointment.created_at:
-        delta = appt_datetime - appointment.created_at
-        row["lead_time_days"] = max(delta.days, 0)
+        row["lead_time_days"] = max((appt_dt - appointment.created_at).days, 0)
+    else:
+        row["lead_time_days"] = 7
 
-    # Day of week (0–6)
-    row["day_of_week"] = appt_datetime.weekday()
+    # -------------------------
+    # IMD FIELDS
+    # -------------------------
+    postcode = getattr(user, "post_code", "") or ""
+    imd_score, imd_band = lookup_imd(postcode)
 
-    # Day of month
-    row["appointment_day_of_month"] = appt_datetime.day
+    row["postcode"] = postcode
+    row["imd_score"] = imd_score
+    row["imd_band"] = imd_band
 
-    # Default appointment hour (you can replace with slot start_time later)
-    row["hour"] = 9
+    # -------------------------
+    # PATIENT FIELDS
+    # -------------------------
+    # age band
+    dob = getattr(user, "date_of_birth", None)
+    row["age_band"] = compute_age_band(dob, appt_date)
 
-    # Example mapping from patient fields (if you added them):
-    try:
-        row["age_band"] = getattr(patient, "age_band", "18-30")
-        row["sex"] = getattr(patient, "sex", "other")
-        row["rurality"] = getattr(patient, "rurality", "urban")
-        row["chronic_condition"] = getattr(patient, "chronic_condition", "none")
-        row["num_chronic_conditions"] = int(getattr(patient, "num_chronic_conditions", 0))
+    # sex
+    row["sex"] = getattr(user, "sex", "other")
 
-    except Exception:
-        pass
+    # chronic conditions
+    chronic = (getattr(user, "chronic_condition", "") or "").lower()
+    if chronic in ["", "none", "no"]:
+        row["num_chronic_conditions"] = 0
+        row["has_chronic"] = 0
+        row["chronic_condition"] = "none"
+    else:
+        row["num_chronic_conditions"] = 1
+        row["has_chronic"] = 1
+        row["chronic_condition"] = chronic
 
-    # Convert to DataFrame
-    df = pd.DataFrame([row])
+    # -------------------------
+    # APPOINTMENT HISTORY
+    # -------------------------
+    past = Appointment.objects.filter(patient=user, appointment_date__lt=appt_date)
 
-    # Ensure categorical columns are strings
+    row["past_appointments"] = past.count()
+    row["past_no_shows"] = 0
+    row["attendance_rate"] = 1.0
+    row["last_attended_days_ago"] = 30
+
+    # -------------------------
+    # DEFAULT FIELDS REQUIRED BY MODEL
+    # -------------------------
+    row["cancellations"] = 0
+    row["late_arrivals"] = 0
+    row["was_rescheduled"] = 0
+    row["reschedule_count"] = 0
+    row["distance_km"] = 5.0
+
+    # reminders (before sending)
+    row["sms_sent"] = 0
+    row["sms_read"] = 0
+    row["email_sent"] = 0
+    row["call_attempted"] = 0
+
+    # context features
+    row["weather"] = "sunny"
+    row["transport_disruption"] = 0
+    row["local_holiday"] = 0
+
+    # booking details
+    row["booking_channel"] = "web"
+    row["appointment_type"] = "checkup"
+
+    # -------------------------
+    # BUILD FINAL DATAFRAME EXACTLY IN CORRECT ORDER
+    # -------------------------
+    df = pd.DataFrame([[row[f] for f in MODEL_FEATURES]], columns=MODEL_FEATURES)
+
+    # convert categorical fields to strings
     for col in CATEGORICAL_COLS:
         if col in df.columns:
             df[col] = df[col].astype(str)
 
-    # Ensure correct order
-    df = df[MODEL_FEATURES]
-
+    print("🔍 FINAL FEATURE ROW:", df.to_dict(orient="records")[0])
+    print("DEBUG postcode used for IMD:", postcode)
     return df
 
 
 
-# ====================================
-# 3. Core predictor
-# ====================================
+# ============================================================
+# 4. Prediction → probability
+# ============================================================
 
-def ml_predict_no_show_probability(patient, appointment):
-    """Return probability (0–1) that the patient will miss the appointment."""
-    
-    if model is None or MODEL_FEATURES is None:
+# def ml_predict_no_show_probability(user, appointment):
+#     if model is None:
+#         return None
+
+#     features = build_feature_row(user, appointment)
+#     if features is None:
+#         return None
+
+#     return float(model.predict_proba(features)[0, 1])
+
+def ml_predict_no_show_probability(user, appointment):
+    # 1) Check model
+    if model is None:
+        print("❌ DEBUG: model is None inside ml_predict_no_show_probability")
         return None
 
-    features_df = build_feature_row(patient, appointment)
-    if features_df is None:
+    # 2) Build features
+    features = build_feature_row(user, appointment)
+
+    if features is None:
+        print("❌ DEBUG: build_feature_row returned None")
+        print("   DEBUG: MODEL_FEATURES =", MODEL_FEATURES)
         return None
 
-    proba = model.predict_proba(features_df)[0, 1]  # class 1 = no-show
-    return float(proba)
+    print("✅ DEBUG: model and features are OK")
+    print("   DEBUG: features columns =", list(features.columns))
+
+    try:
+        proba = model.predict_proba(features)[0, 1]
+        print("✅ DEBUG: raw model probability =", proba)
+        return float(proba)
+    except Exception as e:
+        print("⚠️ DEBUG: prediction error:", repr(e))
+        return None
 
 
+# ============================================================
+# 5. Probability → Risk → Intervention
+# ============================================================
 
-# ====================================
-# 4. Map prob → risk band → intervention
-# ====================================
+# def predict_risk_and_intervention(user, appointment):
+#     p = ml_predict_no_show_probability(user, appointment)
+#     # if p is not None:
+#     #     print(f"🔍 ML Probability Score: {p:.4f}")
+#     # else:
+#         # print("⚠️ ML model returned None — fallback activated")
 
-def predict_risk_and_intervention(patient, appointment):
-    """
-    Compute risk level + intervention strategy.
-    """
+#     print("🔥 ML SCORE (no-show probability) =", p)
+#     if p is None:
+#         print("⚠️ ML model returned None — fallback activated")
+#         import random
+#         risk = random.choice(["low", "medium", "high"])
+#     else:
+#         print(f"🔍 ML Probability Score: {p:.4f}")
+#         if p < 0.30:
+#             risk = "low"
+#         elif p < 0.70:
+#             risk = "medium"
+#         else:
+#             risk = "high"
+#             if p is None:
+#                 print("⚠️ ML returned no probability — falling back to medium risk")
+#                 return "medium", "sms_confirm"
 
-    p = ml_predict_no_show_probability(patient, appointment)
+#             print(f"📌 ML Probability = {p:.3f} → Risk = {risk}")
+
+#     # print(f"📌 ML Probability = {p:.3f} → Risk = {risk}")
+
+#     # INTERVENTION MATCHING
+#     if risk == "low":
+#         intervention = "sms"
+#     elif risk == "medium":
+#         intervention = "sms_confirm"
+#     else:
+#         intervention = "sms_call"
+
+#     return risk, intervention
+
+def predict_risk_and_intervention(user, appointment):
+    p = ml_predict_no_show_probability(user, appointment)
+    print("🔥 ML SCORE (no-show probability) =", p)
 
     if p is None:
-        # fallback (model missing)
+        print("⚠️ ML model returned None — fallback activated")
         import random
         risk = random.choice(["low", "medium", "high"])
     else:
-        # Probability-based banding
         if p < 0.30:
             risk = "low"
         elif p < 0.70:
@@ -344,9 +394,8 @@ def predict_risk_and_intervention(patient, appointment):
         else:
             risk = "high"
 
-        print(f"🎯 ML Probability = {p:.3f} → Risk = {risk}")
+        print(f"📌 ML Probability = {p:.3f} → Risk = {risk}")
 
-    # map risk to intervention strategy
     if risk == "low":
         intervention = "sms"
     elif risk == "medium":

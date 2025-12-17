@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate
+from accounts.imd_lookup import lookup_imd   # <-- REQUIRED IMPORT
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -14,17 +15,31 @@ class RegisterSerializer(serializers.ModelSerializer):
             "password",
             "date_of_birth",
             "phone",
-            "rurality",
+            "post_code",
             "sex",
             "chronic_condition",
             "chronic_other",
         ]
 
     def create(self, validated_data):
+        # Extract password safely
         password = validated_data.pop("password")
+
+        # Get postcode from request
+        postcode = validated_data.get("post_code")
+
+        # IMD lookup (returns tuple)
+        imd_score, imd_band = lookup_imd(postcode)
+
+        # Add IMD fields into saved user object
+        validated_data["imd_score"] = imd_score
+        validated_data["imd_band"] = imd_band
+
+        # Create user
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+
         return user
 
 class LoginSerializer(serializers.Serializer):
@@ -59,7 +74,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "date_joined",
             "date_of_birth",
             "phone",
-            "rurality",
+            "post_code",
             "sex",
             "chronic_condition",
             "chronic_other",
@@ -68,4 +83,4 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name"]      
+        fields = ["name"]    
