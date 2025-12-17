@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer,LoginSerializer, UserProfileSerializer, UserProfileUpdateSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserProfileSerializer, UserProfileUpdateSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -22,10 +22,13 @@ def register_patient(request):
                 "role": user.role,
                 "date_of_birth": user.date_of_birth,
                 "phone": user.phone,
-                "rurality": user.rurality,
+                "post_code": user.post_code,
                 "sex": user.sex,
                 "chronic_condition": user.chronic_condition,
                 "chronic_other": user.chronic_other,
+                "imd_score": user.imd_score,
+                "imd_band": user.imd_band,
+
             }
         }, status=status.HTTP_201_CREATED)
 
