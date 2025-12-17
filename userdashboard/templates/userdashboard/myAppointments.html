@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: fixed;
+            background: white;
+            border-right: 1px solid #e9ecef;
+            padding-top: 20px;
+        }
+
+        .sidebar .nav-link {
+            padding: 12px 20px;
+            font-weight: 500;
+            color: #0d6efd;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: #0d6efd;
+            color: white;
+            border-radius: 8px;
+        }
+
+        .content-area {
+            margin-left: 260px;
+            padding: 25px;
+        }
+
+        .navbar {
+            margin-left: 240px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .appointment-card {
+            border-radius: 12px;
+            border-left: 6px solid #0d6efd;
+            transition: all .2s;
+        }
+
+        .appointment-card:hover {
+            transform: scale(1.01);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h4 class="text-center fw-bold mb-4">DNA Healthcare</h4>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{% url 'userdashboard' %}">Dashboard</a>
+            <a class="nav-link" href="{% url 'booking' %}">Book Appointment</a>
+            <a class="nav-link active" href="{% url 'myAppointments' %}">My Appointments</a>
+            <a class="nav-link" href="{% url 'user_profile' %}">Profile</a>
+            <a class="nav-link text-danger" href="#" id="logoutBtn">Logout</a>
+        </nav>
+    </div>
+
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg px-4">
+        <div class="container-fluid">
+            <span class="navbar-brand fw-bold">My Appointments</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="content-area">
+        <div class="container">
+            <div id="appointmentsList" class="row gy-3"></div>
+
+            <p id="message" class="text-center text-danger mt-4"></p>
+        </div>
+    </div>
+
+    <script>
+        async function loadAppointments() {
+            const container = document.getElementById("appointmentsList");
+            const msgEl = document.getElementById("message");
+
+            try {
+                const response = await fetch("/api/appointments/my-appointments/", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("access_token"),
+                        "Content-Type": "application/json",
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    msgEl.innerText = JSON.stringify(data);
+                    return;
+                }
+
+                if (data.length === 0) {
+                    msgEl.innerText = "You have no booked appointments yet.";
+                    return;
+                }
+
+                msgEl.innerText = "";
+
+                data.forEach(app => {
+                    const card = `
+                <div class="col-md-6" id="app-${app.id}">
+                    <div class="card appointment-card p-3">
+                        <h5 class="fw-bold">${app.appointment_date}</h5>
+
+                        <p class="mb-1"><strong>Reason:</strong> ${app.reason}</p>
+                        <p class="mb-1"><strong>Symptoms:</strong> ${app.symptoms.join(", ")}</p>
+                        <p class="mb-1"><strong>Other:</strong> ${app.other_symptoms || "None"}</p>
+                        <p class="mb-1"><strong>Time:</strong> ${app.slot_time}</p>
+
+    
+
+                        <hr>
+
+                        <button class="btn btn-danger btn-sm mt-2" 
+                            onclick="cancelAppointment(${app.id})">
+                            Cancel Appointment
+                        </button>
+
+                        <p class="text-muted small mt-2">Booked on ${app.created_at}</p>
+                    </div>
+                </div>`;
+
+                    container.innerHTML += card;
+                });
+
+            } catch (error) {
+                msgEl.innerText = "Unable to load appointments.";
+            }
+        }
+
+        /* --------------------------------
+           CANCEL APPOINTMENT FUNCTION
+        -------------------------------- */
+        async function cancelAppointment(id) {
+            if (!confirm("Are you sure you want to cancel this appointment?")) return;
+
+            try {
+                const response = await fetch(`/api/appointments/cancel/${id}/`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("access_token"),
+                        "Content-Type": "application/json",
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("Appointment cancelled successfully!");
+                    document.getElementById(`app-${id}`).remove();
+                } else {
+                    alert(data.detail || "Failed to cancel appointment.");
+                }
+
+            } catch (err) {
+                alert("Something went wrong.");
+            }
+        }
+
+        loadAppointments();
+
+        /* --------------------------------
+           LOGOUT
+        -------------------------------- */
+        document.getElementById("logoutBtn").addEventListener("click", function () {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh");
+            localStorage.removeItem("role");
+            window.location.href = "/login/";
+        });
+
+    </script>
+</body>
+
+</html>

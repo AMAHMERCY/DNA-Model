@@ -1,0 +1,283 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+
+    .sidebar {
+      width: 240px;
+      height: 100vh;
+      position: fixed;
+      background: white;
+      border-right: 1px solid #e9ecef;
+      padding-top: 20px;
+    }
+
+    .sidebar .nav-link {
+      padding: 12px 20px;
+      font-weight: 500;
+      color: #0d6efd;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-link.active {
+      background: #0d6efd;
+      color: white;
+      border-radius: 8px;
+    }
+
+    .content-area {
+      margin-left: 260px;
+      padding: 20px;
+    }
+
+    .navbar {
+      margin-left: 240px;
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .profile-card {
+      border-radius: 12px;
+      padding: 25px;
+    }
+  </style>
+</head>
+
+<body>
+
+ 
+  <div class="sidebar">
+    <h4 class="text-center fw-bold mb-4">DNA Healthcare</h4>
+
+    <nav class="nav flex-column">
+      <a class="nav-link" href="{% url 'userdashboard' %}">Dashboard</a>
+      <a class="nav-link" href="{% url 'booking' %}">Book Appointment</a>
+      <a class="nav-link" href="{% url 'myAppointments' %}">My Appointments</a>
+      <a class="nav-link active" href="#">Profile</a>
+      <a class="nav-link text-danger" href="#" id="logoutBtn">Logout</a>
+    </nav>
+  </div>
+
+  
+  <nav class="navbar navbar-expand-lg px-4">
+    <div class="container-fluid">
+      <span class="navbar-brand fw-bold">My Profile</span>
+    </div>
+  </nav>
+
+
+  <div class="content-area">
+    <div class="container">
+
+      <div class="card profile-card shadow-sm mx-auto" style="max-width: 700px;">
+
+        <div class="text-center mb-4">
+          <img id="avatar" class="rounded-circle shadow-sm" alt="Profile Picture" width="120">
+        </div>
+
+        <h4 class="fw-bold text-center" id="profile_name"></h4>
+        <p class="text-center text-muted mb-4" id="profile_email"></p>
+
+        <hr>
+
+        <h5 class="fw-bold mb-3">Account Details</h5>
+
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Name:</div>
+          <div class="col" id="name"></div>
+        </div>
+
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Email:</div>
+          <div class="col" id="email"></div>
+        </div>
+
+        
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Date of Birth:</div>
+          <div class="col" id="date_of_birth"></div>
+        </div>
+
+      
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Age:</div>
+          <div class="col" id="age"></div>
+        </div>
+
+         <div class="row mb-2">
+          <div class="col-5 fw-semibold">Gender:</div>
+          <div class="col" id="gender"></div>
+        </div>
+
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Hospital ID:</div>
+          <div class="col" id="hospital_id"></div>
+        </div>
+
+        <div class="row mb-2">
+          <div class="col-5 fw-semibold">Role:</div>
+          <div class="col" id="role"></div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-5 fw-semibold">Joined:</div>
+          <div class="col" id="date_joined"></div>
+        </div>
+
+        <hr>
+
+        <div class="text-center">
+          <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+            Edit Profile
+          </button>
+          <a href="#" class="btn btn-outline-danger px-4 ms-2">Change Password</a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="editProfileLabel">Edit Profile</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <div id="editProfileMessage" class="text-center mb-2"></div>
+
+          <form id="editProfileForm">
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Full Name</label>
+              <input type="text" id="edit_name" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    async function loadProfile() {
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        window.location.href = "/login/";
+        return;
+      }
+
+      const response = await fetch("/api/accounts/profile/", {
+        method: "GET",
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) return;
+
+      document.getElementById("name").innerText = data.name;
+      document.getElementById("email").innerText = data.email;
+      document.getElementById("hospital_id").innerText = data.hospital_id;
+      document.getElementById("role").innerText = data.role;
+      const gender = data.sex;
+      const formatted = gender.charAt(0).toUpperCase() + gender.slice(1);
+
+      document.getElementById("gender").innerText = formatted;
+      document.getElementById("date_joined").innerText =
+        new Date(data.date_joined).toDateString();
+
+      document.getElementById("profile_name").innerText = data.name;
+      document.getElementById("profile_email").innerText = data.email;
+
+      
+      document.getElementById("date_of_birth").innerText = data.date_of_birth;
+
+      
+      const dob = new Date(data.date_of_birth);
+      const diff = Date.now() - dob.getTime();
+      const ageDt = new Date(diff);
+      const age = Math.abs(ageDt.getUTCFullYear() - 1970);
+      document.getElementById("age").innerText = age + " years";
+
+      
+      document.getElementById("avatar").src =
+        "https://ui-avatars.com/api/?name=" +
+        encodeURIComponent(data.name) +
+        "&size=120&background=0d6efd&color=fff";
+
+      // Pre-fill modal
+      document.getElementById("edit_name").value = data.name;
+    }
+
+    loadProfile();
+
+
+    // UPDATE PROFILE
+    document.getElementById("editProfileForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const payload = {
+        name: document.getElementById("edit_name").value,
+      };
+
+      const response = await fetch("/api/accounts/profile/update/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("access_token")
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      const msg = document.getElementById("editProfileMessage");
+
+      if (response.ok) {
+        msg.innerHTML = `<p class="text-success fw-bold">Profile updated successfully!</p>`;
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        msg.innerHTML = `<p class="text-danger">${JSON.stringify(data)}</p>`;
+      }
+    });
+
+
+    // LOGOUT
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh");
+      localStorage.removeItem("role");
+
+      window.location.href = "/login/";
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
