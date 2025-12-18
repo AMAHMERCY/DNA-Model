@@ -1,5 +1,3 @@
-
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -62,67 +60,6 @@ def book_appointment(request):
         },
         status=201,
     )
-
-
-# def book_appointment(request):
-#     serializer = AppointmentCreateSerializer(data=request.data, context={"request": request})
-
-#     if not serializer.is_valid():
-#         return Response(serializer.errors, status=400)
-
-#     data = serializer.validated_data
-#     user = request.user
-#     selected_date = data["appointment_date"]
-#     slot_id = data["slot_id"]
-
-#     # RULE 1: No booking if user already has upcoming appointment
-#     existing = Appointment.objects.filter(
-#         patient=user,
-#         appointment_date__gte=date.today()
-#     )
-
-#     if existing.exists():
-#         return Response(
-#             {"detail": "You already have an upcoming appointment. Cancel it first."},
-#             status=400
-#         )
-
-#     # RULE 2: Slot must exist & be active
-#     slot = AppointmentSlot.objects.filter(id=slot_id, is_active=True).first()
-#     if not slot:
-#         return Response({"detail": "Selected time slot is invalid or inactive."}, status=400)
-
-#     # CREATE appointment
-#     appointment = Appointment.objects.create(
-#         patient=user,
-#         appointment_date=selected_date,
-#         slot_id=slot_id,
-#         reason=data["reason"],
-#         symptoms=data["symptoms"],
-#         other_symptoms=data.get("other_symptoms", "")
-#     )
-
-#     # ---------------------------
-#     # REAL ML RISK PREDICTION
-#     # ---------------------------
-#     risk, intervention = predict_risk_and_intervention(user, appointment)
-
-#     appointment.risk_level = risk
-#     appointment.recommended_intervention = intervention
-#     appointment.save()
-
-#     return Response(
-#         {
-#             "message": "Appointment booked successfully",
-#             "appointment": AppointmentDetailSerializer(appointment).data,
-#         },
-#         status=201
-#     )
-
-
-# -------------------------------------------------------------------
-#   USER — VIEW MY APPOINTMENTS
-# -------------------------------------------------------------------
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

@@ -69,118 +69,7 @@ def compute_age_band(dob, appt_date):
     return "70+"
 
 
-
-# ============================================================
-# 3. Build feature row for the ML model
-# ============================================================
-
-# def build_feature_row(user, appointment):
-#     if MODEL_FEATURES is None:
-#         return None
-
-#     row = {f: 0 for f in MODEL_FEATURES}
-
-#     # -------------------------
-#     # APPOINTMENT DATE FEATURES
-#     # -------------------------
-#     appt_date = appointment.appointment_date
-#     appt_dt = datetime.combine(appt_date, datetime.min.time())
-
-#     row["appointment_day_of_month"] = appt_dt.day
-#     row["appointment_month"] = appt_dt.month
-#     row["appointment_weekofyear"] = appt_dt.isocalendar().week
-#     row["appointment_day_name"] = appt_dt.strftime("%A")
-#     row["day_of_week"] = appt_dt.weekday()
-
-#     # lead_time_days
-#     if appointment.created_at:
-#         row["lead_time_days"] = max((appt_dt - appointment.created_at).days, 0)
-#     else:
-#         row["lead_time_days"] = 7
-
-#     # hour (from slot)
-#     try:
-#         slot = AppointmentSlot.objects.filter(id=appointment.slot_id).first()
-#         row["hour"] = slot.start_time.hour if slot else 9
-#     except:
-#         row["hour"] = 9
-
-#     # -------------------------
-#     # IMD FROM POSTCODE
-#     # -------------------------
-#     postcode = getattr(user, "post_code", "") or ""
-#     imd_score, imd_band = lookup_imd(postcode)
-
-#     row["postcode"] = postcode or "UNKNOWN"
-#     row["imd_score"] = imd_score
-#     row["imd_band"] = imd_band
-
-#     # -------------------------
-#     # PATIENT ATTRIBUTES
-#     # -------------------------
-#     row["sex"] = getattr(user, "sex", "other")
-#     row["chronic_condition"] = getattr(user, "chronic_condition", "none")
-
-#     # num_chronic_conditions
-#     cond = row["chronic_condition"].lower()
-#     row["num_chronic_conditions"] = 0 if cond in ["none", "no", ""] else 1
-#     row["has_chronic"] = 1 if row["num_chronic_conditions"] > 0 else 0
-
-#     # age_band
-#     dob = getattr(user, "date_of_birth", None)
-#     row["age_band"] = compute_age_band(dob, appt_date)
-
-#     # -----------------------------------
-#     # PAST APPOINTMENT BEHAVIOUR (THIN DB)
-#     # -----------------------------------
-#     past_qs = Appointment.objects.filter(patient=user, appointment_date__lt=appt_date)
-#     row["past_appointments"] = past_qs.count()
-#     row["past_no_shows"] = 0  # you don’t store historical labels
-#     row["attendance_rate"] = 1.0  # safe default
-#     row["last_attended_days_ago"] = 30
-
-#     # -----------------------------------
-#     # REQUIRED MODEL FEATURES (DEFAULTS)
-#     # -----------------------------------
-#     row["cancellations"] = 0
-#     row["late_arrivals"] = 0
-#     row["was_rescheduled"] = 0
-#     row["reschedule_count"] = 0
-#     row["distance_km"] = 5.0
-
-#     # reminders
-#     row["sms_read"] = 0
-#     row["email_sent"] = 0
-#     row["call_attempted"] = 0
-
-#     # context
-#     row["weather"] = "sunny"
-#     row["transport_disruption"] = 0
-#     row["local_holiday"] = 0
-
-#     # booking metadata
-#     row["booking_channel"] = "web"
-#     row["appointment_type"] = "checkup"
-
-#     # -----------------------------------
-#     # BUILD FINAL DATAFRAME
-#     # -----------------------------------
-#     df = pd.DataFrame([row])
-
-#     for col in CATEGORICAL_COLS:
-#         if col in df.columns:
-#             df[col] = df[col].astype(str)
-
-#     df = df[MODEL_FEATURES]  # reorder exactly
-
-#     return df
-
 def build_feature_row(user, appointment):
-    # if MODEL_FEATURES is None:
-    #     return None
-
-    # appt_date = appointment.appointment_date
-    # appt_dt = datetime.combine(appt_date, datetime.min.time())
     if MODEL_FEATURES is None:
         return None
 
@@ -294,22 +183,6 @@ def build_feature_row(user, appointment):
     print("DEBUG postcode used for IMD:", postcode)
     return df
 
-
-
-# ============================================================
-# 4. Prediction → probability
-# ============================================================
-
-# def ml_predict_no_show_probability(user, appointment):
-#     if model is None:
-#         return None
-
-#     features = build_feature_row(user, appointment)
-#     if features is None:
-#         return None
-
-#     return float(model.predict_proba(features)[0, 1])
-
 def ml_predict_no_show_probability(user, appointment):
     # 1) Check model
     if model is None:
@@ -335,49 +208,6 @@ def ml_predict_no_show_probability(user, appointment):
         print("⚠️ DEBUG: prediction error:", repr(e))
         return None
 
-
-# ============================================================
-# 5. Probability → Risk → Intervention
-# ============================================================
-
-# def predict_risk_and_intervention(user, appointment):
-#     p = ml_predict_no_show_probability(user, appointment)
-#     # if p is not None:
-#     #     print(f"🔍 ML Probability Score: {p:.4f}")
-#     # else:
-#         # print("⚠️ ML model returned None — fallback activated")
-
-#     print("🔥 ML SCORE (no-show probability) =", p)
-#     if p is None:
-#         print("⚠️ ML model returned None — fallback activated")
-#         import random
-#         risk = random.choice(["low", "medium", "high"])
-#     else:
-#         print(f"🔍 ML Probability Score: {p:.4f}")
-#         if p < 0.30:
-#             risk = "low"
-#         elif p < 0.70:
-#             risk = "medium"
-#         else:
-#             risk = "high"
-#             if p is None:
-#                 print("⚠️ ML returned no probability — falling back to medium risk")
-#                 return "medium", "sms_confirm"
-
-#             print(f"📌 ML Probability = {p:.3f} → Risk = {risk}")
-
-#     # print(f"📌 ML Probability = {p:.3f} → Risk = {risk}")
-
-#     # INTERVENTION MATCHING
-#     if risk == "low":
-#         intervention = "sms"
-#     elif risk == "medium":
-#         intervention = "sms_confirm"
-#     else:
-#         intervention = "sms_call"
-
-#     return risk, intervention
-
 def predict_risk_and_intervention(user, appointment):
     p = ml_predict_no_show_probability(user, appointment)
     print("🔥 ML SCORE (no-show probability) =", p)
@@ -388,9 +218,9 @@ def predict_risk_and_intervention(user, appointment):
         risk = random.choice(["low", "medium", "high"])
     else:
         if p < 0.30:
-            risk = "low"
-        elif p < 0.70:
             risk = "medium"
+        elif p < 0.70:
+            risk = "low"
         else:
             risk = "high"
 
@@ -404,3 +234,144 @@ def predict_risk_and_intervention(user, appointment):
         intervention = "sms_call"
 
     return risk, intervention
+
+
+# Automated intervention
+import re
+
+def normalize_phone(phone):
+    if not phone:
+        return None
+
+    p = re.sub(r"\s+", "", phone)
+
+    if p.startswith("+"):
+        return p
+    if p.startswith("0"):
+        return "+44" + p[1:]
+    if p.startswith("44"):
+        return "+44" + p[2:]
+
+    return p
+
+# def send_sms(to, message):
+#     """Send a plain SMS and return True/False for success."""
+#     if not twilio_client:
+#         print("❌ SMS not sent — Twilio not configured")
+#         return False
+
+#     try:
+#         twilio_client.messages.create(
+#             body=message,
+#             from_=TWILIO_FROM,
+#             to=to
+#         )
+#         print("📩 SMS SENT to", to)
+#         return True
+#     except Exception as e:
+#         print("❌ SMS FAILED:", e)
+#         return False
+def send_sms(to, message):
+    if not twilio_client:
+        print("❌ SMS not sent — Twilio not configured")
+        return False
+
+    to = normalize_phone(to)
+    if not to or not to.startswith("+"):
+        print("❌ Invalid phone number:", to)
+        return False
+
+    try:
+        msg = twilio_client.messages.create(
+            body=message,
+            from_=TWILIO_FROM,
+            to=to
+        )
+        print("📩 SMS SENT:", msg.sid, "to", to)
+        return True
+    except Exception as e:
+        print("❌ SMS FAILED:", e)
+        return False
+
+
+# def send_reminder_for_appointment(appointment):
+#     """
+#     Called ~24h before appointment_date.
+#     Uses existing risk_level to decide what to do:
+
+#     - low    → send simple SMS
+#     - medium → send confirmation SMS
+#     - high   → call first; if call fails, send SMS
+#     """
+#     user = appointment.patient
+#     phone = getattr(user, "phone", None)
+
+#     if not phone:
+#         print(f"❌ No phone number for user {user.email} – skipping reminder.")
+#         return
+
+#     risk = appointment.risk_level
+
+#     print(f"🔔 Sending reminder for {user.email}, risk={risk}")
+
+#     if risk == "low":
+#         # Simple reminder SMS
+#         send_sms(
+#             phone,
+#             f"Reminder: You have an NHS appointment on {appointment.appointment_date}."
+#         )
+
+#     # elif risk == "medium":
+#     #     # Confirmation SMS
+#     #     # send_confirmation_sms(phone, appointment)
+
+#     # elif risk == "high":
+#     #     # 1) Try call
+#     #     call_ok = make_phone_call(phone, appointment)
+
+#     #     # 2) Only if call failed, send SMS
+#     #     if not call_ok:
+#     #         send_sms(
+#     #             phone,
+#     #             f"We could not reach you by phone. "
+#     #             f"Please remember your NHS appointment on {appointment.appointment_date}."
+#     #         )
+
+#     else:
+#         print(f"⚠️ Unknown risk level '{risk}' – no reminder sent.")
+
+def send_reminder_for_appointment(appointment):
+    user = appointment.patient
+    phone = normalize_phone(getattr(user, "phone", None))
+
+    if not phone:
+        print(f"❌ No phone for {user.email}")
+        return
+
+    risk = appointment.risk_level
+    date_str = appointment.appointment_date.strftime("%Y-%m-%d")
+
+    print(f"🔔 Reminder triggered for {user.email} | risk={risk}")
+
+    if risk == "low":
+        send_sms(
+            phone,
+            f"Reminder: You have an NHS appointment tomorrow ({date_str})."
+        )
+
+    elif risk == "medium":
+        send_sms(
+            phone,
+            f"Please confirm your NHS appointment tomorrow ({date_str}) by replying YES."
+        )
+
+    elif risk == "high":
+        # Call first (placeholder)
+        call_answered = False  # integrate Twilio call later
+
+        if not call_answered:
+            send_sms(
+                phone,
+                f"We tried to reach you by phone. "
+                f"Please attend your NHS appointment tomorrow ({date_str})."
+            )
