@@ -161,7 +161,7 @@ console.log(data)
             document.getElementById("message").classList.remove("text-danger");
             document.getElementById("message").classList.add("text-success");
             document.getElementById("message").innerText = "Registration successful!";
-           // window.location.href = "/login/";
+            window.location.href = "/login/";
         } else {
             document.getElementById("message").innerText = JSON.stringify(data);
         }
