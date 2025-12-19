@@ -12,6 +12,10 @@ from django.conf import settings
 TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = os.getenv("TWILIO_PHONE_NUMBER")
+print("DEBUG TWILIO_SID:", TWILIO_SID)
+print("DEBUG TWILIO_TOKEN:", bool(TWILIO_TOKEN))
+print("DEBUG TWILIO_FROM:", TWILIO_FROM)
+
 
 twilio_client = None
 if TWILIO_SID and TWILIO_TOKEN:
@@ -218,9 +222,9 @@ def predict_risk_and_intervention(user, appointment):
         risk = random.choice(["low", "medium", "high"])
     else:
         if p < 0.30:
-            risk = "medium"
-        elif p < 0.70:
             risk = "low"
+        elif p < 0.60:
+            risk = "medium"
         else:
             risk = "high"
 
@@ -234,7 +238,6 @@ def predict_risk_and_intervention(user, appointment):
         intervention = "sms_call"
 
     return risk, intervention
-
 
 # Automated intervention
 import re
@@ -254,23 +257,6 @@ def normalize_phone(phone):
 
     return p
 
-# def send_sms(to, message):
-#     """Send a plain SMS and return True/False for success."""
-#     if not twilio_client:
-#         print("❌ SMS not sent — Twilio not configured")
-#         return False
-
-#     try:
-#         twilio_client.messages.create(
-#             body=message,
-#             from_=TWILIO_FROM,
-#             to=to
-#         )
-#         print("📩 SMS SENT to", to)
-#         return True
-#     except Exception as e:
-#         print("❌ SMS FAILED:", e)
-#         return False
 def send_sms(to, message):
     if not twilio_client:
         print("❌ SMS not sent — Twilio not configured")
@@ -292,53 +278,6 @@ def send_sms(to, message):
     except Exception as e:
         print("❌ SMS FAILED:", e)
         return False
-
-
-# def send_reminder_for_appointment(appointment):
-#     """
-#     Called ~24h before appointment_date.
-#     Uses existing risk_level to decide what to do:
-
-#     - low    → send simple SMS
-#     - medium → send confirmation SMS
-#     - high   → call first; if call fails, send SMS
-#     """
-#     user = appointment.patient
-#     phone = getattr(user, "phone", None)
-
-#     if not phone:
-#         print(f"❌ No phone number for user {user.email} – skipping reminder.")
-#         return
-
-#     risk = appointment.risk_level
-
-#     print(f"🔔 Sending reminder for {user.email}, risk={risk}")
-
-#     if risk == "low":
-#         # Simple reminder SMS
-#         send_sms(
-#             phone,
-#             f"Reminder: You have an NHS appointment on {appointment.appointment_date}."
-#         )
-
-#     # elif risk == "medium":
-#     #     # Confirmation SMS
-#     #     # send_confirmation_sms(phone, appointment)
-
-#     # elif risk == "high":
-#     #     # 1) Try call
-#     #     call_ok = make_phone_call(phone, appointment)
-
-#     #     # 2) Only if call failed, send SMS
-#     #     if not call_ok:
-#     #         send_sms(
-#     #             phone,
-#     #             f"We could not reach you by phone. "
-#     #             f"Please remember your NHS appointment on {appointment.appointment_date}."
-#     #         )
-
-#     else:
-#         print(f"⚠️ Unknown risk level '{risk}' – no reminder sent.")
 
 def send_reminder_for_appointment(appointment):
     user = appointment.patient
