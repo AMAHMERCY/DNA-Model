@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'appointments',
-    'userdashboard'
+    'userdashboard',
+     "chatbot"
 
 ]
 REST_FRAMEWORK = {
